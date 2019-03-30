@@ -1,20 +1,22 @@
 local push = require "push"
 
 function love.load()
-  gameWidth, gameHeight = 640, 360
+  love.graphics.setDefaultFilter("nearest", "nearest")
+
+  gameWidth, gameHeight = 256, 256
   windowWidth, windowHeight = love.window.getDesktopDimensions()
-  
+
   push:setupScreen(
-    gameWidth, gameHeight,
-    windowWidth, windowHeight,
-    { resizable = false, pixelperfect = true, fullscreen = true})
+      gameWidth, gameHeight,
+      windowWidth, windowHeight,
+      { resizable = false, pixelperfect = true, fullscreen = true})
   
-  squareX = 15
-  squareY = 50
-  squareSize = 10
-  squareVelX = 1.5
+  squareX = 20
+  squareY = 20
+  squareSize = 1
+  squareVelX = 2
   squareVelY = 0
-  gravity = 0.05
+  gravity = 0.02
   terminalVel = 15
 end
 
