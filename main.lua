@@ -1,9 +1,11 @@
 local push = require "push"
 
+local Ship = require "ship"
+
 function love.load()
   love.graphics.setDefaultFilter("nearest", "nearest")
 
-  gameWidth, gameHeight = 256, 256
+  gameWidth, gameHeight = 160, 144
   halfGameWidth = gameWidth / 2
   halfGameHeight = gameHeight / 2
   windowWidth, windowHeight = love.window.getDesktopDimensions()
@@ -27,17 +29,7 @@ function love.load()
   
   spritesheet = love.graphics.newImage("spritesheet.png")
   
-  player = {
-    x = halfGameWidth,
-    y = halfGameHeight,
-    angle = 0,
-    angVel = 0,
-    angAccel = 40,
-    maxAngVel = 5,
-    speed = 0,
-    accel = 150,
-    maxSpeed = 150
-  }
+  player = Ship:new(halfGameWidth - 4, halfGameHeight - 4)
   
   friction = 0.3
   
@@ -61,23 +53,7 @@ function love.update(dt)
     end
   end
   
-  local frictionDecay = math.pow(friction, dt)
-  
-  player.angVel = player.angVel + (player.angAccel * inMagX * dt)
-  
-  player.angle = player.angle + player.angVel * dt
-  player.angVel = player.angVel * frictionDecay
-  player.angVel = math.min(player.angVel, player.maxAngVel)
-  player.angVel = math.max(player.angVel, -player.maxAngVel)
-  
-  player.speed = player.speed + (player.accel * -inMagY * dt)
-  -- TODO account for delta value in friction?
-  player.speed = player.speed * frictionDecay
-  player.speed = math.min(player.speed, player.maxSpeed)
-  player.speed = math.max(player.speed, -player.maxSpeed)
-  
-  player.x = player.x + (math.cos(player.angle) * player.speed) * dt
-  player.y = player.y + (math.sin(player.angle) * player.speed) * dt
+  player:update(dt, inMagX, inMagY)
   
   ticks = ticks + dt
 end
