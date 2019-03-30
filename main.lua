@@ -41,19 +41,36 @@ function love.load()
   
   player = Ship:new(halfGameWidth - 4, halfGameHeight - 4)
   
-  enemies = {}
-  enemies[1] = EnemyShip:new(10, 10)
+  lastEnemySpawn = 0
+  enemySpawnRate = 1
   
   ships = {player}
   
-  for i = 1, #enemies do
-    ships[i + 1] = enemies[i]
-  end
+  score = 0
+  
   
   ticks = 0
 end
 
+function spawnEnemy()
+  local spawnDist = 10
+  local spawnAngle = love.math.random() * (2 * math.pi)
+  local spawnX = halfGameWidth + math.cos(spawnAngle) * spawnDist
+  local spawnY = halfGameHeight + math.sin(spawnAngle) * spawnDist
+  
+  table.insert(ships, EnemyShip:new(spawnX, spawnY))
+end
+
 function love.update(dt)
+  ticks = ticks + dt
+  lastEnemySpawn = lastEnemySpawn + dt
+  
+  if lastEnemySpawn > enemySpawnRate then
+    spawnEnemy()
+    
+    lastEnemySpawn = 0
+  end
+  
   -- update player's angle/speed based on keyboard input
   local inMagX, inMagY = 0, 0
   for i = 1, #directions do
@@ -66,8 +83,6 @@ function love.update(dt)
   for i = 1, #ships do
     ships[i]:update(dt, inMagX, inMagY)
   end
-  
-  ticks = ticks + dt
 end
 
 function love.draw()

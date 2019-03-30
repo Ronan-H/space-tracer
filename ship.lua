@@ -19,7 +19,7 @@ function Ship:update(dt, inMagX, inMagY)
   
   self.angVel = self.angVel + (self.angAccel * inMagX * dt)
   
-  self.angle = self.angle + self.angVel * dt
+  self.angle = (self.angle + self.angVel * dt) % (math.pi * 2)
   self.angVel = self.angVel * frictionDecay
   self.angVel = math.min(self.angVel, self.maxAngVel)
   self.angVel = math.max(self.angVel, -self.maxAngVel)
