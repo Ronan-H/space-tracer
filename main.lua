@@ -1,6 +1,7 @@
 local push = require "push"
 
 local Ship = require "ship"
+local EnemyShip = require "enemy_ship"
 
 function love.load()
   love.graphics.setDefaultFilter("nearest", "nearest")
@@ -29,8 +30,6 @@ function love.load()
   
   spritesheet = love.graphics.newImage("spritesheet.png")
   
-  player = Ship:new(halfGameWidth - 4, halfGameHeight - 4)
-  
   friction = 0.3
   
   directions = {"up", "down", "left", "right"}
@@ -39,6 +38,17 @@ function love.load()
   inputTable["down"] = {0, 1}
   inputTable["left"] = {-1, 0}
   inputTable["right"] = {1, 0}
+  
+  player = Ship:new(halfGameWidth - 4, halfGameHeight - 4)
+  
+  enemies = {}
+  enemies[1] = EnemyShip:new(10, 10)
+  
+  ships = {player}
+  
+  for i = 1, #enemies do
+    ships[i + 1] = enemies[i]
+  end
   
   ticks = 0
 end
@@ -53,7 +63,9 @@ function love.update(dt)
     end
   end
   
-  player:update(dt, inMagX, inMagY)
+  for i = 1, #ships do
+    ships[i]:update(dt, inMagX, inMagY)
+  end
   
   ticks = ticks + dt
 end
@@ -64,7 +76,16 @@ function love.draw()
   love.graphics.setColor(palette[1])
   love.graphics.rectangle("fill", 0, 0, gameWidth, gameHeight)
   
-  love.graphics.draw(spritesheet, math.floor(player.x), math.floor(player.y), player.angle, 1, 1, 4, 4)
+  for i = 1, #ships do
+    local ship = ships[i]
+    love.graphics.draw(
+      spritesheet,
+      math.floor(ship.x),
+      math.floor(ship.y),
+      ship.angle,
+      1, 1,
+      4, 4)
+  end
   
   push:finish()
 end
