@@ -19,7 +19,8 @@ function love.load()
   
   -- load font
   font = love.graphics.newImageFont("images/font.png",
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#.!?: ", 3)
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#.!?: ")
+    
   love.graphics.setFont(font)
   
   palette = {}
@@ -76,12 +77,17 @@ function spawnEnemy()
   table.insert(ships, EnemyShip:new(spawnX, spawnY, strength))
 end
 
+function cutoutRemoval()
+  
+end
+
 function cutout()
   collider = HC.new()
   
   local cutoutPolygon = nil
   
   cutoutPolygon = collider:polygon(unpack(cutoutPoints))
+  
   local toRemove = {}
   
   for i = 2, #ships do
@@ -130,7 +136,7 @@ function love.update(dt)
     table.insert(cutoutPoints, math.floor(player.y))
   else
     if #cutoutPoints >= 6 then
-      cutout()
+      pcall(cutout)
     end
     cutoutPoints = {}
   end
