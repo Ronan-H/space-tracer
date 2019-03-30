@@ -32,14 +32,14 @@ function love.load()
     y = halfGameHeight,
     angle = 0,
     angVel = 0,
-    angAccel = 1,
-    maxAngVel = math.pi,
+    angAccel = 40,
+    maxAngVel = 5,
     speed = 0,
-    accel = 0,
-    maxSpeed = 10
+    accel = 150,
+    maxSpeed = 150
   }
   
-  friction = 0.5
+  friction = 0.3
   
   directions = {"up", "down", "left", "right"}
   inputTable = {}
@@ -61,17 +61,20 @@ function love.update(dt)
     end
   end
   
-  player.angVel = player.angVel + (player.angVel * player.angAccel * inMagX * dt)
-  player.speed = player.speed + (player.accel * inMagY * dt)
+  local frictionDecay = math.pow(friction, dt)
   
-  player.angle = player.angle + player.angVel
+  player.angVel = player.angVel + (player.angAccel * inMagX * dt)
+  
+  player.angle = player.angle + player.angVel * dt
+  player.angVel = player.angVel * frictionDecay
   player.angVel = math.min(player.angVel, player.maxAngVel)
   player.angVel = math.max(player.angVel, -player.maxAngVel)
   
+  player.speed = player.speed + (player.accel * -inMagY * dt)
   -- TODO account for delta value in friction?
-  -- player.speed = player.speed * friction
-  player.speed = math.min(player.angVel, player.maxSpeed)
-  player.speed = math.max(player.angVel, -player.maxSpeed)
+  player.speed = player.speed * frictionDecay
+  player.speed = math.min(player.speed, player.maxSpeed)
+  player.speed = math.max(player.speed, -player.maxSpeed)
   
   player.x = player.x + (math.cos(player.angle) * player.speed) * dt
   player.y = player.y + (math.sin(player.angle) * player.speed) * dt
