@@ -57,8 +57,9 @@ function love.load()
   spritesheet = love.graphics.newImage("images/spritesheet.png")
   
   explosion = love.audio.newSource("sfx/explosion.ogg", "static")
+  hit = love.audio.newSource("sfx/hit.ogg", "static")
   
-  friction = 0.2
+  friction = 0.1
   
   directions = {"up", "down", "left", "right"}
   inputTable = {}
@@ -142,6 +143,13 @@ function playerTouchingEnemy()
   return false
 end
 
+function playerOutOfBounds()
+  return player.x - 4 < 0
+    or player.x + 4 > gameWidth
+    or player.y - 4 < 0
+    or player.y + 4 > gameHeight
+end
+
 function love.update(dt)
   if score == nil then
     reset()
@@ -151,7 +159,8 @@ function love.update(dt)
   lastEnemySpawn = lastEnemySpawn + dt
   lastScoreInc = lastScoreInc + dt
   
-  if playerTouchingEnemy() then
+  if playerTouchingEnemy() or playerOutOfBounds() then
+    hit:play()
     reset()
   end
   

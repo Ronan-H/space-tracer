@@ -7,11 +7,11 @@ function Ship:initialize(initialX, initialY)
   self.y = initialY
   self.angle = 0
   self.angVel = 0
-  self.angAccel = 40
-  self.maxAngVel = 5
+  self.angAccel = 30
+  self.maxAngVel = 3
   self.speed = 0
   self.accel = 150
-  self.maxSpeed = 150
+  self.maxSpeed = 100
   self.size = 8
 end
 
