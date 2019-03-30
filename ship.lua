@@ -12,6 +12,7 @@ function Ship:initialize(initialX, initialY)
   self.speed = 0
   self.accel = 150
   self.maxSpeed = 150
+  self.size = 8
 end
 
 function Ship:update(dt, inMagX, inMagY)

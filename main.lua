@@ -1,4 +1,5 @@
-local push = require "push"
+local HC = require 'HC'
+local push = require 'push'
 
 local Ship = require "ship"
 local EnemyShip = require "enemy_ship"
@@ -35,6 +36,8 @@ function love.load()
   
   spritesheet = love.graphics.newImage("images/spritesheet.png")
   
+  explosion = love.audio.newSource("sfx/explosion.ogg", "static")
+  
   friction = 0.2
   
   directions = {"up", "down", "left", "right"}
@@ -54,7 +57,8 @@ function love.load()
   
   score = 0
   lastScoreInc = 0
-  secPerScore = 0.1
+  secPerScore = 0.25
+  scorePerEnemy = 5
   
   maxSpawnTime = 30
   
@@ -73,7 +77,37 @@ function spawnEnemy()
 end
 
 function cutout()
-  cutoutPoints = {}
+  collider = HC.new()
+  
+  local cutoutPolygon = nil
+  
+  cutoutPolygon = collider:polygon(unpack(cutoutPoints))
+  local toRemove = {}
+  
+  for i = 2, #ships do
+    local enemy = ships[i]
+    local enemyRect = collider:rectangle(
+      math.floor(enemy.x) - 5,
+      math.floor(enemy.y) - 5,
+      enemy.size + 2,
+      enemy.size + 2)
+    
+    if cutoutPolygon:collidesWith(enemyRect) then
+      table.insert(toRemove, i)
+    end
+  end
+  
+  if #toRemove > 0 then
+    explosion:play()
+    
+    score = score + (#toRemove * scorePerEnemy)
+    
+    -- remove enemies
+    for i = 1, #toRemove do
+      print("Removing at index " .. toRemove[i])
+      table.remove(ships, toRemove[i])
+    end
+  end
 end
 
 function love.update(dt)
@@ -95,7 +129,10 @@ function love.update(dt)
     table.insert(cutoutPoints, math.floor(player.x))
     table.insert(cutoutPoints, math.floor(player.y))
   else
-    cutout()
+    if #cutoutPoints >= 6 then
+      cutout()
+    end
+    cutoutPoints = {}
   end
   
   -- update player's angle/speed based on keyboard input
