@@ -4,22 +4,22 @@ local Ship = require "ship"
 
 local EnemyShip = class("EnemyShip", Ship)
 
-function EnemyShip:initialize(initialX, initialY)
+function EnemyShip:initialize(initialX, initialY, strength)
   Ship.initialize(self, initialX, initialY)
   
   self.maxSpeed = self.maxSpeed / 4
   self.maxAngVel = self.maxAngVel / 2
   
-  self.updateInputInterval = 0.5
-  self.timeSinceInputUpdate = 0
+  self.strength = strength
+  
+  self.maxSpeed = self.maxSpeed * strength
+  self.angAccel = self.angAccel * strength
 end
 
 function EnemyShip:update(dt)
   -- ai code
   local inMagX = 0
   local inMagY = -1
-  
-  self.timeSinceInputUpdate = self.timeSinceInputUpdate + dt
   
   local angleTo = math.atan2(player.y - self.y, player.x - self.x)
   self.angle = angleTo

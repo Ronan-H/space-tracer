@@ -16,6 +16,11 @@ function love.load()
       windowWidth, windowHeight,
       { resizable = false, pixelperfect = true, fullscreen = true})
   
+  -- load font
+  font = love.graphics.newImageFont("images/font.png",
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#.!?: ", 3)
+  love.graphics.setFont(font)
+  
   palette = {}
   palette[1] = {155, 188, 15}
   palette[2] = {139, 172, 15}
@@ -28,9 +33,9 @@ function love.load()
     end
   end
   
-  spritesheet = love.graphics.newImage("spritesheet.png")
+  spritesheet = love.graphics.newImage("images/spritesheet.png")
   
-  friction = 0.3
+  friction = 0.2
   
   directions = {"up", "down", "left", "right"}
   inputTable = {}
@@ -41,34 +46,56 @@ function love.load()
   
   player = Ship:new(halfGameWidth - 4, halfGameHeight - 4)
   
-  lastEnemySpawn = 0
+  spawnDist = math.sqrt(halfGameWidth * halfGameWidth * 2) + 5
   enemySpawnRate = 1
+  lastEnemySpawn = enemySpawnRate
   
   ships = {player}
   
   score = 0
+  lastScoreInc = 0
+  secPerScore = 0.1
   
+  maxSpawnTime = 30
+  
+  cutoutPoints = {}
   
   ticks = 0
 end
 
 function spawnEnemy()
-  local spawnDist = 10
   local spawnAngle = love.math.random() * (2 * math.pi)
   local spawnX = halfGameWidth + math.cos(spawnAngle) * spawnDist
   local spawnY = halfGameHeight + math.sin(spawnAngle) * spawnDist
+  local strength = math.min((love.math.random() * (ticks / maxSpawnTime) + 0.3), 1.5)
   
-  table.insert(ships, EnemyShip:new(spawnX, spawnY))
+  table.insert(ships, EnemyShip:new(spawnX, spawnY, strength))
+end
+
+function cutout()
+  cutoutPoints = {}
 end
 
 function love.update(dt)
   ticks = ticks + dt
   lastEnemySpawn = lastEnemySpawn + dt
+  lastScoreInc = lastScoreInc + dt
   
-  if lastEnemySpawn > enemySpawnRate then
+  if lastScoreInc >= secPerScore then
+    score = score + 1
+    lastScoreInc = 0
+  end
+  
+  if lastEnemySpawn >= enemySpawnRate then
     spawnEnemy()
-    
     lastEnemySpawn = 0
+  end
+  
+  if love.keyboard.isDown("z") then
+    table.insert(cutoutPoints, math.floor(player.x))
+    table.insert(cutoutPoints, math.floor(player.y))
+  else
+    cutout()
   end
   
   -- update player's angle/speed based on keyboard input
@@ -90,6 +117,16 @@ function love.draw()
   
   love.graphics.setColor(palette[1])
   love.graphics.rectangle("fill", 0, 0, gameWidth, gameHeight)
+  
+  -- draw cutout line
+  love.graphics.setColor(palette[3])
+  if #cutoutPoints >= 6 then
+    love.graphics.polygon("fill", cutoutPoints)
+  end
+  
+  -- draw score
+  love.graphics.setColor(palette[3])
+  love.graphics.print(score, halfGameWidth - font:getWidth(score) / 2, 1)
   
   for i = 1, #ships do
     local ship = ships[i]
