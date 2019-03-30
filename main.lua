@@ -4,6 +4,25 @@ local push = require 'push'
 local Ship = require "ship"
 local EnemyShip = require "enemy_ship"
 
+function reset()
+  player = Ship:new(halfGameWidth - 4, halfGameHeight - 4)
+  score = 0
+  
+  lastEnemySpawn = enemySpawnRate
+  
+  ships = {player}
+  
+  lastScoreInc = 0
+  secPerScore = 0.25
+  scorePerEnemy = 5
+  
+  maxSpawnTime = 30
+  
+  cutoutPoints = {}
+  
+  ticks = 0
+end
+
 function love.load()
   love.graphics.setDefaultFilter("nearest", "nearest")
 
@@ -48,24 +67,8 @@ function love.load()
   inputTable["left"] = {-1, 0}
   inputTable["right"] = {1, 0}
   
-  player = Ship:new(halfGameWidth - 4, halfGameHeight - 4)
-  
   spawnDist = math.sqrt(halfGameWidth * halfGameWidth * 2) + 5
   enemySpawnRate = 1
-  lastEnemySpawn = enemySpawnRate
-  
-  ships = {player}
-  
-  score = 0
-  lastScoreInc = 0
-  secPerScore = 0.25
-  scorePerEnemy = 5
-  
-  maxSpawnTime = 30
-  
-  cutoutPoints = {}
-  
-  ticks = 0
 end
 
 function spawnEnemy()
@@ -75,10 +78,6 @@ function spawnEnemy()
   local strength = math.min((love.math.random() * (ticks / maxSpawnTime) + 0.3), 1.5)
   
   table.insert(ships, EnemyShip:new(spawnX, spawnY, strength))
-end
-
-function cutoutRemoval()
-  
 end
 
 function cutout()
@@ -116,10 +115,45 @@ function cutout()
   end
 end
 
+function playerTouchingEnemy()
+  collider = HC.new()
+  
+  local toRemove = {}
+  
+  local playerRect = collider:rectangle(
+      math.floor(player.x) - 5,
+      math.floor(player.y) - 5,
+      player.size + 2,
+      player.size + 2)
+  
+  for i = 2, #ships do
+    local enemy = ships[i]
+    local enemyRect = collider:rectangle(
+      math.floor(enemy.x) - 5,
+      math.floor(enemy.y) - 5,
+      enemy.size + 2,
+      enemy.size + 2)
+    
+    if playerRect:collidesWith(enemyRect) then
+      return true
+    end
+  end
+  
+  return false
+end
+
 function love.update(dt)
+  if score == nil then
+    reset()
+  end
+  
   ticks = ticks + dt
   lastEnemySpawn = lastEnemySpawn + dt
   lastScoreInc = lastScoreInc + dt
+  
+  if playerTouchingEnemy() then
+    reset()
+  end
   
   if lastScoreInc >= secPerScore then
     score = score + 1
