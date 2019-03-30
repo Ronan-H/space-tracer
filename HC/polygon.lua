@@ -1,28 +1,3 @@
---[[
-Copyright (c) 2011 Matthias Richter
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-Except as contained in this notice, the name(s) of the above copyright holders
-shall not be used in advertising or otherwise to promote the sale, use or
-other dealings in this Software without prior written authorization.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-]]--
 
 local _PACKAGE, common_local = (...):match("^(.+)%.[^%.]+"), common
 if not (type(common) == 'table' and common.class and common.instance) then
@@ -32,10 +7,6 @@ if not (type(common) == 'table' and common.class and common.instance) then
 end
 local vector = require(_PACKAGE .. '.vector-light')
 
-----------------------------
--- Private helper functions
---
--- create vertex list of coordinate pairs
 local function toVertexList(vertices, x,y, ...)
 	if not (x and y) then return vertices end -- no more arguments
 
@@ -43,11 +14,10 @@ local function toVertexList(vertices, x,y, ...)
 	return toVertexList(vertices, ...)         -- recurse
 end
 
--- returns true if three vertices lie on a line
 local function areCollinear(p, q, r, eps)
 	return math.abs(vector.det(q.x-p.x, q.y-p.y,  r.x-p.x,r.y-p.y)) <= (eps or 1e-32)
 end
--- remove vertices that lie on a line
+
 local function removeCollinear(vertices)
 	local ret = {}
 	local i,k = #vertices - 1, #vertices
@@ -155,10 +125,7 @@ function Polygon:init(...)
 		end
 		vertices = tmp
 	end
-
-	-- assert polygon is not self-intersecting
-	-- outer: only need to check segments #vert;1, 1;2, ..., #vert-3;#vert-2
-	-- inner: only need to check unconnected segments
+  
 	local q,p = vertices[#vertices]
 	for i = 1,#vertices-2 do
 		p, q = q, vertices[i]
@@ -260,41 +227,6 @@ function Polygon:isConvex()
 	return status
 end
 
-function Polygon:move(dx, dy)
-	if not dy then
-		dx, dy = dx:unpack()
-	end
-	for i,v in ipairs(self.vertices) do
-		v.x = v.x + dx
-		v.y = v.y + dy
-	end
-	self.centroid.x = self.centroid.x + dx
-	self.centroid.y = self.centroid.y + dy
-end
-
-function Polygon:rotate(angle, cx, cy)
-	if not (cx and cy) then
-		cx,cy = self.centroid.x, self.centroid.y
-	end
-	for i,v in ipairs(self.vertices) do
-		-- v = (v - center):rotate(angle) + center
-		v.x,v.y = vector.add(cx,cy, vector.rotate(angle, v.x-cx, v.y-cy))
-	end
-	local v = self.centroid
-	v.x,v.y = vector.add(cx,cy, vector.rotate(angle, v.x-cx, v.y-cy))
-end
-
-function Polygon:scale(s, cx,cy)
-	if not (cx and cy) then
-		cx,cy = self.centroid.x, self.centroid.y
-	end
-	for i,v in ipairs(self.vertices) do
-		-- v = (v - center) * s + center
-		v.x,v.y = vector.add(cx,cy, vector.mul(s, v.x-cx, v.y-cy))
-	end
-	self._radius = self._radius * s
-end
-
 -- triangulation by the method of kong
 function Polygon:triangulate()
 	if #self.vertices == 3 then return {self:clone()} end
@@ -339,36 +271,6 @@ function Polygon:triangulate()
 	return triangles
 end
 
--- return merged polygon if possible or nil otherwise
-function Polygon:mergedWith(other)
-	local p,q = getSharedEdge(self.vertices, other.vertices)
-	assert(p and q, "Polygons do not share an edge")
-
-	local ret = {}
-	for i = 1,p-1 do
-		ret[#ret+1] = self.vertices[i].x
-		ret[#ret+1] = self.vertices[i].y
-	end
-
-	for i = 0,#other.vertices-2 do
-		i = ((i-1 + q) % #other.vertices) + 1
-		ret[#ret+1] = other.vertices[i].x
-		ret[#ret+1] = other.vertices[i].y
-	end
-
-	for i = p+1,#self.vertices do
-		ret[#ret+1] = self.vertices[i].x
-		ret[#ret+1] = self.vertices[i].y
-	end
-
-	return newPolygon(unpack(ret))
-end
-
--- split polygon into convex polygons.
--- note that this won't be the optimal split in most cases, as
--- finding the optimal split is a really hard problem.
--- the method is to first triangulate and then greedily merge
--- the triangles.
 function Polygon:splitConvex()
 	-- edge case: polygon is a triangle or already convex
 	if #self.vertices <= 3 or self:isConvex() then return {self:clone()} end
@@ -392,83 +294,6 @@ function Polygon:splitConvex()
 	until i >= #convex
 	
 	return convex
-end
-
-function Polygon:contains(x,y)
-	-- test if an edge cuts the ray
-	local function cut_ray(p,q)
-		return ((p.y > y and q.y < y) or (p.y < y and q.y > y)) -- possible cut
-			and (x - p.x < (y - p.y) * (q.x - p.x) / (q.y - p.y)) -- x < cut.x
-	end
-
-	-- test if the ray crosses boundary from interior to exterior.
-	-- this is needed due to edge cases, when the ray passes through
-	-- polygon corners
-	local function cross_boundary(p,q)
-		return (p.y == y and p.x > x and q.y < y)
-			or (q.y == y and q.x > x and p.y < y)
-	end
-
-	local v = self.vertices
-	local in_polygon = false
-	local p,q = v[#v],v[#v]
-	for i = 1, #v do
-		p,q = q,v[i]
-		if cut_ray(p,q) or cross_boundary(p,q) then
-			in_polygon = not in_polygon
-		end
-	end
-	return in_polygon
-end
-
-function Polygon:intersectionsWithRay(x,y, dx,dy)
-	local nx,ny = vector.perpendicular(dx,dy)
-	local wx,wy,det
-
-	local ts = {} -- ray parameters of each intersection
-	local q1,q2 = nil, self.vertices[#self.vertices]
-	for i = 1, #self.vertices do
-		q1,q2 = q2,self.vertices[i]
-		wx,wy = q2.x - q1.x, q2.y - q1.y
-		det = vector.det(dx,dy, wx,wy)
-
-		if det ~= 0 then
-			-- there is an intersection point. check if it lies on both
-			-- the ray and the segment.
-			local rx,ry = q2.x - x, q2.y - y
-			local l = vector.det(rx,ry, wx,wy) / det
-			local m = vector.det(dx,dy, rx,ry) / det
-			if m >= 0 and m <= 1 then
-				-- we cannot jump out early here (i.e. when l > tmin) because
-				-- the polygon might be concave
-				ts[#ts+1] = l
-			end
-		else
-			-- lines parralel or incident. get distance of line to
-			-- anchor point. if they are incident, check if an endpoint
-			-- lies on the ray
-			local dist = vector.dot(q1.x-x,q1.y-y, nx,ny)
-			if dist == 0 then
-				local l = vector.dot(dx,dy, q1.x-x,q1.y-y)
-				local m = vector.dot(dx,dy, q2.x-x,q2.y-y)
-				if l >= m then
-					ts[#ts+1] = l
-				else
-					ts[#ts+1] = m
-				end
-			end
-		end
-	end
-
-	return ts
-end
-
-function Polygon:intersectsRay(x,y, dx,dy)
-	local tmin = math.huge
-	for _, t in ipairs(self:intersectionsWithRay(x,y,dx,dy)) do
-		tmin = math.min(tmin, t)
-	end
-	return tmin ~= math.huge, tmin
 end
 
 Polygon = common_local.class('Polygon', Polygon)

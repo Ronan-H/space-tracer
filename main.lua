@@ -8,6 +8,9 @@ function reset()
   player = Ship:new(halfGameWidth - 4, halfGameHeight - 4)
   score = 0
   
+  enemySpawnRate = 4
+  minEnemySpawnRate = 2
+  spawnRateInc = -0.05
   lastEnemySpawn = enemySpawnRate
   
   ships = {player}
@@ -54,7 +57,7 @@ function love.load()
     end
   end
   
-  spritesheet = love.graphics.newImage("images/spritesheet.png")
+  spritesheet = love.graphics.newImage("images/ship.png")
   
   explosion = love.audio.newSource("sfx/explosion.ogg", "static")
   hit = love.audio.newSource("sfx/hit.ogg", "static")
@@ -69,7 +72,6 @@ function love.load()
   inputTable["right"] = {1, 0}
   
   spawnDist = math.sqrt(halfGameWidth * halfGameWidth * 2) + 5
-  enemySpawnRate = 1
 end
 
 function spawnEnemy()
@@ -95,8 +97,8 @@ function cutout()
     local enemyRect = collider:rectangle(
       math.floor(enemy.x) - 5,
       math.floor(enemy.y) - 5,
-      enemy.size + 2,
-      enemy.size + 2)
+      enemy.size + 5,
+      enemy.size + 5)
     
     if cutoutPolygon:collidesWith(enemyRect) then
       table.insert(toRemove, i)
@@ -122,18 +124,18 @@ function playerTouchingEnemy()
   local toRemove = {}
   
   local playerRect = collider:rectangle(
-      math.floor(player.x) - 5,
-      math.floor(player.y) - 5,
-      player.size + 2,
-      player.size + 2)
+      math.floor(player.x) - 4,
+      math.floor(player.y) - 4,
+      8,
+      8)
   
   for i = 2, #ships do
     local enemy = ships[i]
     local enemyRect = collider:rectangle(
-      math.floor(enemy.x) - 5,
-      math.floor(enemy.y) - 5,
-      enemy.size + 2,
-      enemy.size + 2)
+      math.floor(enemy.x) - 3,
+      math.floor(enemy.y) - 3,
+      6,
+      6)
     
     if playerRect:collidesWith(enemyRect) then
       return true
@@ -158,6 +160,7 @@ function love.update(dt)
   ticks = ticks + dt
   lastEnemySpawn = lastEnemySpawn + dt
   lastScoreInc = lastScoreInc + dt
+  enemySpawnRate = math.max(enemySpawnRate + (spawnRateInc * dt), 1)
   
   if playerTouchingEnemy() or playerOutOfBounds() then
     hit:play()
