@@ -1,5 +1,5 @@
 local HC = require 'HC'
-local push = require 'push'
+local push = require 'push.push'
 
 local Ship = require "ship"
 local EnemyShip = require "enemy_ship"
