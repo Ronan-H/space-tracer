@@ -3,9 +3,10 @@ local push = require 'push.push'
 
 local Ship = require "ship"
 local EnemyShip = require "enemy_ship"
+local PlayerShip = require "player_ship"
 
 function reset()
-  player = Ship:new(halfGameWidth - 4, halfGameHeight - 4)
+  player = PlayerShip:new(halfGameWidth - 4, halfGameHeight - 4)
   score = 0
   
   enemySpawnRate = 4
@@ -15,8 +16,6 @@ function reset()
   
   ships = {player}
   
-  lastScoreInc = 0
-  secPerScore = 0.25
   scorePerEnemy = 5
   
   maxSpawnTime = 30
@@ -62,7 +61,7 @@ function love.load()
   explosion = love.audio.newSource("sfx/explosion.ogg", "static")
   hit = love.audio.newSource("sfx/hit.ogg", "static")
   
-  friction = 0.1
+  friction = 0.95
   
   directions = {"up", "down", "left", "right"}
   inputTable = {}
@@ -159,17 +158,11 @@ function love.update(dt)
   
   ticks = ticks + dt
   lastEnemySpawn = lastEnemySpawn + dt
-  lastScoreInc = lastScoreInc + dt
   enemySpawnRate = math.max(enemySpawnRate + (spawnRateInc * dt), 1)
   
   if playerTouchingEnemy() or playerOutOfBounds() then
     hit:play()
     reset()
-  end
-  
-  if lastScoreInc >= secPerScore then
-    score = score + 1
-    lastScoreInc = 0
   end
   
   if lastEnemySpawn >= enemySpawnRate then
