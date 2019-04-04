@@ -94,10 +94,10 @@ function cutout()
   for i = 2, #ships do
     local enemy = ships[i]
     local enemyRect = collider:rectangle(
-      math.floor(enemy.x) - 5,
-      math.floor(enemy.y) - 5,
-      enemy.size + 5,
-      enemy.size + 5)
+      math.floor(enemy.x) - 1,
+      math.floor(enemy.y) - 1,
+      7,
+      7)
     
     if cutoutPolygon:collidesWith(enemyRect) then
       table.insert(toRemove, i)
@@ -110,7 +110,7 @@ function cutout()
     score = score + (#toRemove * scorePerEnemy)
     
     -- remove enemies
-    for i = 1, #toRemove do
+    for i = #toRemove, 1, -1 do
       print("Removing at index " .. toRemove[i])
       table.remove(ships, toRemove[i])
     end
@@ -123,18 +123,18 @@ function playerTouchingEnemy()
   local toRemove = {}
   
   local playerRect = collider:rectangle(
-      math.floor(player.x) - 4,
-      math.floor(player.y) - 4,
-      8,
-      8)
+      math.floor(player.x) - 2,
+      math.floor(player.y) - 2,
+      3,
+      3)
   
   for i = 2, #ships do
     local enemy = ships[i]
     local enemyRect = collider:rectangle(
-      math.floor(enemy.x) - 3,
-      math.floor(enemy.y) - 3,
-      6,
-      6)
+      math.floor(enemy.x) - 2,
+      math.floor(enemy.y) - 2,
+      4,
+      4)
     
     if playerRect:collidesWith(enemyRect) then
       return true
@@ -145,10 +145,10 @@ function playerTouchingEnemy()
 end
 
 function playerOutOfBounds()
-  return player.x - 4 < 0
-    or player.x + 4 > gameWidth
-    or player.y - 4 < 0
-    or player.y + 4 > gameHeight
+  return player.x - 2 < 0
+    or player.x + 2 > gameWidth
+    or player.y - 2 < 0
+    or player.y + 2 > gameHeight
 end
 
 function love.update(dt)
@@ -218,7 +218,7 @@ function love.draw()
       math.floor(ship.y),
       ship.angle,
       1, 1,
-      4, 4)
+      2.5, 2.5)
   end
   
   push:finish()
