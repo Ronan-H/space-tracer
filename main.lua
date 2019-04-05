@@ -64,7 +64,7 @@ function love.load()
   explosion = love.audio.newSource("sfx/explosion.ogg", "static")
   hit = love.audio.newSource("sfx/hit.ogg", "static")
   
-  friction = 0.95
+  friction = 0.9
   
   directions = {"up", "down", "left", "right"}
   inputTable = {}
