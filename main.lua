@@ -6,7 +6,7 @@ local EnemyShip = require "enemy_ship"
 local PlayerShip = require "player_ship"
 
 function reset()
-  player = PlayerShip:new(halfGameWidth - 4, halfGameHeight - 4)
+  player = PlayerShip:new(halfGameWidth - halfShipWidth, halfGameHeight - halfShipWidth)
   score = 0
   
   enemySpawnRate = 4
@@ -40,7 +40,7 @@ function love.load()
   
   -- load font
   font = love.graphics.newImageFont("images/font.png",
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#.!?: ")
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#.!?: ", 2)
     
   love.graphics.setFont(font)
   
@@ -56,7 +56,10 @@ function love.load()
     end
   end
   
-  spritesheet = love.graphics.newImage("images/ship.png")
+  shipImage = love.graphics.newImage("images/ship.png")
+  
+  shipWidth = shipImage:getWidth()
+  halfShipWidth = shipWidth / 2
   
   explosion = love.audio.newSource("sfx/explosion.ogg", "static")
   hit = love.audio.newSource("sfx/hit.ogg", "static")
@@ -70,7 +73,7 @@ function love.load()
   inputTable["left"] = {-1, 0}
   inputTable["right"] = {1, 0}
   
-  spawnDist = math.sqrt(halfGameWidth * halfGameWidth * 2) + 5
+  spawnDist = math.sqrt(halfGameWidth * halfGameWidth * 2) + math.sqrt(halfShipWidth * halfShipWidth * 2) + 2
 end
 
 function spawnEnemy()
@@ -94,10 +97,10 @@ function cutout()
   for i = 2, #ships do
     local enemy = ships[i]
     local enemyRect = collider:rectangle(
-      math.floor(enemy.x) - 1,
-      math.floor(enemy.y) - 1,
-      7,
-      7)
+      enemy.x,
+      enemy.y,
+      shipWidth,
+      shipWidth)
     
     if cutoutPolygon:collidesWith(enemyRect) then
       table.insert(toRemove, i)
@@ -111,7 +114,6 @@ function cutout()
     
     -- remove enemies
     for i = #toRemove, 1, -1 do
-      print("Removing at index " .. toRemove[i])
       table.remove(ships, toRemove[i])
     end
   end
@@ -123,18 +125,18 @@ function playerTouchingEnemy()
   local toRemove = {}
   
   local playerRect = collider:rectangle(
-      math.floor(player.x) - 2,
-      math.floor(player.y) - 2,
-      3,
-      3)
+      player.x,
+      player.y,
+      shipWidth,
+      shipWidth)
   
   for i = 2, #ships do
     local enemy = ships[i]
     local enemyRect = collider:rectangle(
-      math.floor(enemy.x) - 2,
-      math.floor(enemy.y) - 2,
-      4,
-      4)
+      enemy.x,
+      enemy.y,
+      shipWidth,
+      shipWidth)
     
     if playerRect:collidesWith(enemyRect) then
       return true
@@ -145,10 +147,10 @@ function playerTouchingEnemy()
 end
 
 function playerOutOfBounds()
-  return player.x - 2 < 0
-    or player.x + 2 > gameWidth
-    or player.y - 2 < 0
-    or player.y + 2 > gameHeight
+  return player.x <= 0
+    or player.x + shipWidth >= gameWidth
+    or player.y <= 0
+    or player.y + shipWidth >= gameHeight
 end
 
 function love.update(dt)
@@ -171,8 +173,8 @@ function love.update(dt)
   end
   
   if love.keyboard.isDown("z") then
-    table.insert(cutoutPoints, math.floor(player.x))
-    table.insert(cutoutPoints, math.floor(player.y))
+    table.insert(cutoutPoints, player.x + halfShipWidth)
+    table.insert(cutoutPoints, player.y + halfShipWidth)
   else
     if #cutoutPoints >= 6 then
       pcall(cutout)
@@ -213,12 +215,12 @@ function love.draw()
   for i = 1, #ships do
     local ship = ships[i]
     love.graphics.draw(
-      spritesheet,
-      math.floor(ship.x),
-      math.floor(ship.y),
+      shipImage,
+      ship.x + halfShipWidth,
+      ship.y + halfShipWidth,
       ship.angle,
       1, 1,
-      2.5, 2.5)
+      halfShipWidth, halfShipWidth)
   end
   
   push:finish()
