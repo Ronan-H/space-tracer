@@ -12,11 +12,10 @@ function Ship:initialize(initialX, initialY)
   self.speed = 0
   self.accel = 150
   self.maxSpeed = 100
-  self.size = 8
 end
 
 function Ship:update(dt, inMagX, inMagY)
-  local frictionDecay = math.pow(friction, dt)
+  local frictionDecay = math.pow(1 - friction, dt)
   
   self.angVel = self.angVel + (self.angAccel * inMagX * dt)
   
