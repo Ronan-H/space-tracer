@@ -4,9 +4,12 @@ local push = require 'push.push'
 local Ship = require "ship"
 local EnemyShip = require "enemy_ship"
 local PlayerShip = require "player_ship"
+local TraceLine = require "trace_line"
 
 function reset()
   player = PlayerShip:new(halfGameWidth - halfShipWidth, halfGameHeight - halfShipWidth)
+  traceLine = TraceLine:new(200)
+  
   score = 0
   
   enemySpawnRate = 4
@@ -20,13 +23,12 @@ function reset()
   
   maxSpawnTime = 30
   
-  cutoutPoints = {}
-  
   ticks = 0
 end
 
 function love.load()
   love.graphics.setDefaultFilter("nearest", "nearest")
+  love.graphics.setLineStyle("rough")
 
   gameWidth, gameHeight = 160, 144
   halfGameWidth = gameWidth / 2
@@ -74,6 +76,8 @@ function love.load()
   inputTable["right"] = {1, 0}
   
   spawnDist = math.sqrt(halfGameWidth * halfGameWidth * 2) + math.sqrt(halfShipWidth * halfShipWidth * 2) + 2
+  
+  collider = HC.new()
 end
 
 function spawnEnemy()
@@ -85,43 +89,7 @@ function spawnEnemy()
   table.insert(ships, EnemyShip:new(spawnX, spawnY, strength))
 end
 
-function cutout()
-  collider = HC.new()
-  
-  local cutoutPolygon = nil
-  
-  cutoutPolygon = collider:polygon(unpack(cutoutPoints))
-  
-  local toRemove = {}
-  
-  for i = 2, #ships do
-    local enemy = ships[i]
-    local enemyRect = collider:rectangle(
-      enemy.x,
-      enemy.y,
-      shipWidth,
-      shipWidth)
-    
-    if cutoutPolygon:collidesWith(enemyRect) then
-      table.insert(toRemove, i)
-    end
-  end
-  
-  if #toRemove > 0 then
-    explosion:play()
-    
-    score = score + (#toRemove * scorePerEnemy)
-    
-    -- remove enemies
-    for i = #toRemove, 1, -1 do
-      table.remove(ships, toRemove[i])
-    end
-  end
-end
-
 function playerTouchingEnemy()
-  collider = HC.new()
-  
   local toRemove = {}
   
   local playerRect = collider:rectangle(
@@ -172,15 +140,7 @@ function love.update(dt)
     lastEnemySpawn = 0
   end
   
-  if love.keyboard.isDown("z") then
-    table.insert(cutoutPoints, player.x + halfShipWidth)
-    table.insert(cutoutPoints, player.y + halfShipWidth)
-  else
-    if #cutoutPoints >= 6 then
-      pcall(cutout)
-    end
-    cutoutPoints = {}
-  end
+  traceLine:update(player, ships)
   
   -- update player's angle/speed based on keyboard input
   local inMagX, inMagY = 0, 0
@@ -202,11 +162,7 @@ function love.draw()
   love.graphics.setColor(palette[1])
   love.graphics.rectangle("fill", 0, 0, gameWidth, gameHeight)
   
-  -- draw cutout line
-  love.graphics.setColor(palette[3])
-  if #cutoutPoints >= 6 then
-    love.graphics.polygon("fill", cutoutPoints)
-  end
+  traceLine:draw()
   
   -- draw score
   love.graphics.setColor(palette[3])
