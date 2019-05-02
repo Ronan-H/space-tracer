@@ -8,7 +8,7 @@ local TraceLine = require "trace_line"
 
 function reset()
   player = PlayerShip:new(halfGameWidth - halfShipWidth, halfGameHeight - halfShipWidth)
-  traceLine = TraceLine:new(200)
+  traceLine = TraceLine:new(50)
   
   score = 0
   

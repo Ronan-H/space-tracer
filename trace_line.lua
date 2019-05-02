@@ -8,6 +8,7 @@ function TraceLine:initialize(maxPoints)
     self:resetPoints()
     self.maxPoints = maxPoints
     self.polygon = nil
+    self.minPointDist = 3
 end
 
 function TraceLine:createPolygon()
@@ -66,19 +67,33 @@ end
 function TraceLine:resetPoints()
     self.pointsList = {}
     self.pointsSet = {}
+    
+    -- last points arbitrarily far away to allow the first
+    -- point to be added straight away
+    self.lastPointX = -1000
+    self.lastPointY = -1000
 end
 
 function TraceLine:addPoint(x, y)
-    local pointString = TraceLine:getPointAsString(x, y)
+    -- ensure points aren't too close together
+    local pointDistX = math.abs(x - self.lastPointX)
+    local pointDistY = math.abs(y - self.lastPointY)
     
-    if self.pointsSet[pointString] == nil then
-        self.pointsSet[pointString] = true
-        table.insert(self.pointsList, {x, y})
-        
-        if self:numPoints() > self.maxPoints then
-            self:removePoint(1)
-        end
+    if not (pointDistX >= self.minPointDist or pointDistY >= self.minPointDist) then
+      return
     end
+    
+    -- add point
+    local pointString = TraceLine:getPointAsString(x, y)
+    self.pointsSet[pointString] = true
+    table.insert(self.pointsList, {x, y})
+    
+    if self:numPoints() > self.maxPoints then
+        self:removePoint(1)
+    end
+    
+    self.lastPointX = x
+    self.lastPointY = y
 end
 
 function TraceLine:removePoint(index)
@@ -98,7 +113,7 @@ end
 function TraceLine:update(player, ships)
     self:addPoint(player.x + halfShipWidth, player.y + halfShipWidth)
     
-    if self:numPoints() >= 3 then
+    if self:numPoints() >= 4 then
         local success, errorMessage = pcall(function() self:createPolygon() end)
         
         if not success and string.match(errorMessage, "Polygon may not intersect itself") then

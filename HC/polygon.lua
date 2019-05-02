@@ -143,7 +143,19 @@ local Polygon = {}
 function Polygon:init(...)
 	local vertices = removeCollinear( toVertexList({}, ...) )
 	assert(#vertices >= 3, "Need at least 3 non collinear points to build polygon (got "..#vertices..")")
-
+  
+  -- assert polygon is not self-intersecting
+	-- outer: only need to check segments #vert;1, 1;2, ..., #vert-3;#vert-2
+	-- inner: only need to check unconnected segments
+	local q,p = vertices[#vertices]
+	for i = 1,#vertices-2 do
+		p, q = q, vertices[i]
+		for k = i+1,#vertices-1 do
+			local a,b = vertices[k], vertices[k+1]
+			assert(not segmentsInterset(p,q, a,b), 'Polygon may not intersect itself')
+		end
+	end
+  
 	-- assert polygon is oriented counter clockwise
 	local r = getIndexOfleftmost(vertices)
 	local q = r > 1 and r - 1 or #vertices
@@ -154,18 +166,6 @@ function Polygon:init(...)
 			tmp[#tmp + 1] = vertices[i]
 		end
 		vertices = tmp
-	end
-
-	-- assert polygon is not self-intersecting
-	-- outer: only need to check segments #vert;1, 1;2, ..., #vert-3;#vert-2
-	-- inner: only need to check unconnected segments
-	local q,p = vertices[#vertices]
-	for i = 1,#vertices-2 do
-		p, q = q, vertices[i]
-		for k = i+1,#vertices-1 do
-			local a,b = vertices[k], vertices[k+1]
-			assert(not segmentsInterset(p,q, a,b), 'Polygon may not intersect itself')
-		end
 	end
 
 	self.vertices = vertices
